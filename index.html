@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<title>Evil-Eye — Camera Phishing Framework</title>
+<meta name="description" content="A modern, modular camera phishing framework capable of silently capturing high-quality images from a target's webcam using social engineering templates and a Cloudflare encrypted tunnel.">
+<meta name="keywords" content="RGSecurityTeam, rgsecteam, rgsectm, evel-eye rgsecteam, Evel Eye, evel eye, RGSecurityTeam evel-eye, rgsecurityteam evel eye, rgsecteam evel eye, rgsecteam evel-eye, RGSecurityTeam evel-eye, camphish, camera phishing, penetration testing, camphish tools, advance camphish, kali linux, kali linux tools, phishing tools, hackers tools, kali linux hacking tools, rg security team evel eye, rgsecurityteam youtube, RGSecurityTeam website, RGSecurityTeam offical website, rgsecurityteam tools, kali linux 2026 tools">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="googlebot" content="index, follow">
+<meta name="author" content="RGSecurityTeam">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<style>
+  :root {
+    --red:     #ff2244;
+    --red-dim: #991122;
+    --green:   #00ff88;
+    --cyan:    #00e5ff;
+    --orange:  #ff6b00;
+    --bg:      #060608;
+    --bg2:     #0d0d12;
+    --bg3:     #12121a;
+    --border:  #1e1e2e;
+    --text:    #c8c8d8;
+    --dim:     #555566;
+    --mono:    'Share Tech Mono', monospace;
+    --display: 'Orbitron', sans-serif;
+    --body:    'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.7;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* ── Scanline overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Noise grain ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    animation: grain 0.4s steps(1) infinite;
+  }
+  @keyframes grain {
+    0%,100%{transform:translate(0,0)}
+    10%{transform:translate(-2%,-3%)}
+    20%{transform:translate(3%,1%)}
+    30%{transform:translate(-1%,4%)}
+    40%{transform:translate(2%,-2%)}
+    50%{transform:translate(-3%,2%)}
+    60%{transform:translate(1%,-1%)}
+    70%{transform:translate(4%,3%)}
+    80%{transform:translate(-2%,1%)}
+    90%{transform:translate(2%,-4%)}
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 60px;
+    background: rgba(6,6,8,0.92);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+  }
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--red);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .nav-logo span { color: var(--dim); }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--green); }
+
+  /* ── Hero ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 100px 40px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Red glow bg */
+  #hero::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px; height: 700px;
+    background: radial-gradient(ellipse, rgba(255,34,68,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%,100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); }
+    50%      { opacity: 1;   transform: translate(-50%,-50%) scale(1.15); }
+  }
+
+  /* Grid lines */
+  #hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,34,68,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,34,68,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  /* Logo placeholder */
+  .logo-wrap {
+    width: 140px; height: 140px;
+    margin: 0 auto 36px;
+    border: 2px solid var(--red-dim);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: fadeUp 0.9s ease both;
+    box-shadow: 0 0 40px rgba(255,34,68,0.25), inset 0 0 30px rgba(255,34,68,0.08);
+  }
+  .logo-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,34,68,0.2);
+    animation: spin 12s linear infinite;
+  }
+  .logo-wrap::after {
+    content: '';
+    position: absolute;
+    inset: -16px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,34,68,0.1);
+    animation: spin 20s linear infinite reverse;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .logo-placeholder {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(42px, 8vw, 88px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -2px;
+    color: #fff;
+    margin-bottom: 12px;
+    animation: fadeUp 1s ease both;
+  }
+  .hero-title .accent { color: var(--red); }
+
+  .hero-sub {
+    font-family: var(--display);
+    font-size: clamp(11px, 2vw, 14px);
+    font-weight: 400;
+    letter-spacing: 8px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    animation: fadeUp 1.1s ease both;
+  }
+
+  .hero-desc {
+    max-width: 600px;
+    font-size: 16px;
+    color: var(--text);
+    margin: 0 auto 48px;
+    font-weight: 300;
+    animation: fadeUp 1.2s ease both;
+  }
+
+  .hero-badges {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 56px;
+    animation: fadeUp 1.3s ease both;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .badge.red   { border-color: var(--red-dim);  color: var(--red);   }
+  .badge.green { border-color: #00994d;          color: var(--green); }
+  .badge.cyan  { border-color: #007799;          color: var(--cyan);  }
+
+  .hero-cta {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    animation: fadeUp 1.4s ease both;
+  }
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 14px 32px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: inline-block;
+  }
+  .btn-primary {
+    background: var(--red);
+    color: #fff;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn-primary:hover { background: #ff4466; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,34,68,0.4); }
+  .btn-outline {
+    background: transparent;
+    color: var(--green);
+    border: 1px solid var(--green);
+  }
+  .btn-outline:hover { background: rgba(0,255,136,0.08); transform: translateY(-2px); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Scroll indicator ── */
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 3px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    animation: fadeUp 2s ease both;
+  }
+  .scroll-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, var(--dim), transparent);
+    animation: scroll-drop 2s ease-in-out infinite;
+  }
+  @keyframes scroll-drop {
+    0%,100% { transform: scaleY(1); opacity: 1; }
+    50%      { transform: scaleY(0.5); opacity: 0.4; }
+  }
+
+  /* ── Sections ── */
+  section {
+    padding: 100px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    max-width: 60px;
+    height: 1px;
+    background: var(--red-dim);
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 48px;
+    line-height: 1.1;
+  }
+
+  /* ── Feature grid ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+  .feature-card {
+    background: var(--bg2);
+    padding: 36px 32px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+  .feature-card:hover { background: var(--bg3); }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 0;
+    background: var(--red);
+    transition: height 0.3s;
+  }
+  .feature-card:hover::before { height: 100%; }
+  .feature-icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .feature-title {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .feature-desc {
+    font-size: 14px;
+    color: var(--dim);
+    line-height: 1.6;
+  }
+
+  /* ── Templates ── */
+  .templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .template-card {
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 28px 24px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .template-card:hover {
+    border-color: var(--red-dim);
+    background: var(--bg3);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(255,34,68,0.15);
+  }
+  .template-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+  .template-name {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── Installation ── */
+  .install-steps { display: flex; flex-direction: column; gap: 24px; }
+  .step {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .step-num {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 900;
+    color: var(--bg);
+    background: var(--red);
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    flex-shrink: 0;
+  }
+  .step-content h3 {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .step-content p {
+    font-size: 14px;
+    color: var(--dim);
+    margin-bottom: 12px;
+  }
+
+  /* ── Code blocks ── */
+  .code-block {
+    background: #080810;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    padding: 20px 24px;
+    margin-top: 12px;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 0; right: 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    background: var(--border);
+    text-transform: uppercase;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--green);
+    display: block;
+    white-space: pre;
+    line-height: 1.8;
+  }
+  code .comment { color: var(--dim); }
+  code .cmd     { color: var(--cyan); }
+  code .flag    { color: var(--orange); }
+  code .path    { color: #fff; }
+
+  /* ── Requirements table ── */
+  .req-table { width: 100%; border-collapse: collapse; }
+  .req-table th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-align: left;
+    padding: 12px 20px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  .req-table td {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .req-table tr:hover td { background: var(--bg3); }
+  .req-table td:first-child { color: var(--cyan); }
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 10px;
+    background: rgba(0,255,136,0.1);
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,0.25);
+  }
+  .pill.req { background: rgba(255,107,0,0.1); color: var(--orange); border-color: rgba(255,107,0,0.25); }
+
+  /* ── Usage guide ── */
+  .usage-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  @media (max-width: 720px) { .usage-grid { grid-template-columns: 1fr; } }
+
+  .usage-card {
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 32px;
+  }
+  .usage-card h3 {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .usage-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .usage-list li {
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+  .usage-list li::before {
+    content: '▸';
+    color: var(--red);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .usage-list li span { color: var(--text); }
+
+  /* ── Disclaimer ── */
+  #disclaimer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 80px 40px;
+  }
+  .disclaimer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .disclaimer-box {
+    border: 1px solid var(--red-dim);
+    background: rgba(255,34,68,0.04);
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .disclaimer-box::before {
+    content: '⚠';
+    position: absolute;
+    right: 32px; top: 24px;
+    font-size: 80px;
+    opacity: 0.06;
+    line-height: 1;
+  }
+  .disclaimer-box h2 {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--red);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .disclaimer-box p {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 16px;
+    font-weight: 300;
+    max-width: 760px;
+  }
+  .disclaimer-box p:last-child { margin-bottom: 0; }
+  .disclaimer-box strong { color: var(--red); font-weight: 600; }
+  .disclaimer-points {
+    margin: 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .disclaimer-point {
+    display: flex;
+    gap: 14px;
+    font-size: 14px;
+    color: var(--dim);
+  }
+  .disclaimer-point::before {
+    content: '[!]';
+    font-family: var(--mono);
+    color: var(--red);
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 48px 40px;
+    border-top: 1px solid var(--border);
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+    gap: 16px;
+  }
+  .footer-brand {
+    font-family: var(--display);
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 3px;
+  }
+  .footer-brand span { color: var(--red); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--green); }
+
+  /* ── Divider line ── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 0;
+  }
+
+  /* ── Glitch title effect ── */
+  .glitch {
+    position: relative;
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+  }
+  .glitch::before {
+    color: var(--cyan);
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+    animation: glitch-1 4s infinite;
+    opacity: 0;
+  }
+  .glitch::after {
+    color: var(--red);
+    clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%);
+    animation: glitch-2 4s infinite;
+    opacity: 0;
+  }
+  @keyframes glitch-1 {
+    0%,95%,100% { opacity: 0; transform: none; }
+    96% { opacity: 1; transform: translateX(-3px); }
+    98% { opacity: 1; transform: translateX(3px); }
+  }
+  @keyframes glitch-2 {
+    0%,95%,100% { opacity: 0; transform: none; }
+    97% { opacity: 1; transform: translateX(3px); }
+    99% { opacity: 1; transform: translateX(-3px); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    section { padding: 60px 20px; }
+    #hero { padding: 80px 20px 60px; }
+    footer { flex-direction: column; text-align: center; }
+    .step { grid-template-columns: 1fr; }
+    .step-num { width: 32px; height: 32px; }
+    .disclaimer-box { padding: 28px; }
+    .disclaimer-box::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">Evil<span>-</span>Eye</div>
+  <div class="nav-links">
+    <a href="#about">About</a>
+    <a href="#install">Install</a>
+    <a href="#usage">Usage</a>
+    <a href="#disclaimer">Disclaimer</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div id="hero">
+  <p class="hero-eyebrow">RGSecurityTeam &nbsp;/&nbsp; v0.1 &nbsp;/&nbsp; Camera Phishing Framework</p>
+
+  <!-- Logo slot — replace inner content with your <img> tag -->
+  <div class="logo-wrap" id="logo-slot">
+  <img src="image/evel-eye.png" width="100" height="100" style="border-radius:50%;">
+</div>
+
+  <h1 class="hero-title glitch" data-text="EVIL-EYE">EVIL<span class="accent">-</span>EYE</h1>
+  <p class="hero-sub">Silent Camera Capture Framework</p>
+  <p class="hero-desc">A modern, modular camera phishing tool that silently captures high-quality images through the victim's webcam using social engineering templates and an encrypted tunnel.</p>
+
+  <div class="hero-badges">
+    <span class="badge red">Bash</span>
+    <span class="badge">PHP</span>
+    <span class="badge cyan">Cloudflared</span>
+    <span class="badge green">Open Source</span>
+    <span class="badge">Linux</span>
+    <span class="badge">macOS</span>
+  </div>
+
+  <div class="hero-cta">
+    <a href="#install" class="btn btn-primary">Get Started</a>
+    <a href="#about" class="btn btn-outline">Learn More</a>
+  </div>
+
+  <div class="scroll-hint">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- About / Features -->
+<section id="about">
+  <p class="section-label">01 &nbsp; Overview</p>
+  <h2 class="section-title">What is Evil-Eye?</h2>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">📷</span>
+      <div class="feature-title">Silent Camera Capture</div>
+      <div class="feature-desc">Captures images from the target's front camera using the browser's getUserMedia API — without any visible indication to the victim.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌐</span>
+      <div class="feature-title">Cloudflare Tunnel</div>
+      <div class="feature-desc">Uses Cloudflared to instantly generate a public HTTPS link — no port forwarding, no static IP, works from any network.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎭</span>
+      <div class="feature-title">Social Engineering Templates</div>
+      <div class="feature-desc">Five convincing lure pages — YouTube Live, Birthday Wish, Secret Message, Fake Instagram, and AI Chatbot — to maximize link-open rates.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📍</span>
+      <div class="feature-title">IP & User-Agent Logging</div>
+      <div class="feature-desc">Automatically logs the victim's IP address, browser user-agent, and timestamp the moment the link is opened.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔧</span>
+      <div class="feature-title">Auto Dependency Install</div>
+      <div class="feature-desc">Automatically detects and installs missing tools — PHP, jq, lolcat, curl, wget, and cloudflared — on first run.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🖥️</span>
+      <div class="feature-title">Cross-Distro Support</div>
+      <div class="feature-desc">Tested on Kali Linux, Parrot OS, Ubuntu, and macOS. Detects OS and architecture automatically for correct binary selection.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Templates -->
+<section id="templates">
+  <p class="section-label">02 &nbsp; Templates</p>
+  <h2 class="section-title">Lure Templates</h2>
+
+  <div class="templates-grid">
+    <div class="template-card">
+      <div class="template-num">[ 01 ]</div>
+      <div class="template-name">YouTube Live TV</div>
+    </div>
+    <div class="template-card">
+      <div class="template-num">[ 02 ]</div>
+      <div class="template-name">Birthday Wish</div>
+    </div>
+    <div class="template-card">
+      <div class="template-num">[ 03 ]</div>
+      <div class="template-name">Secret Message</div>
+    </div>
+    <div class="template-card">
+      <div class="template-num">[ 04 ]</div>
+      <div class="template-name">Fake Instagram Followers</div>
+    </div>
+    <div class="template-card">
+      <div class="template-num">[ 05 ]</div>
+      <div class="template-name">AI Chatbot</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Installation -->
+<section id="install">
+  <p class="section-label">03 &nbsp; Installation</p>
+  <h2 class="section-title">Getting Started</h2>
+
+  <!-- Requirements -->
+  <table class="req-table" style="margin-bottom:56px;">
+    <thead>
+      <tr>
+        <th>Dependency</th>
+        <th>Purpose</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>php</td><td>Built-in web server to serve templates</td><td><span class="pill req">Required</span></td></tr>
+      <tr><td>php-cgi</td><td>Fallback CGI server (Parrot OS fix)</td><td><span class="pill req">Required</span></td></tr>
+      <tr><td>curl</td><td>Network requests and health checks</td><td><span class="pill req">Required</span></td></tr>
+      <tr><td>wget</td><td>Downloading cloudflared binary</td><td><span class="pill req">Required</span></td></tr>
+      <tr><td>jq</td><td>JSON processing for secret message template</td><td><span class="pill req">Required</span></td></tr>
+      <tr><td>cloudflared</td><td>Public HTTPS tunnel generation</td><td><span class="pill">Auto-Downloaded</span></td></tr>
+      <tr><td>lolcat</td><td>Colorful terminal banner output</td><td><span class="pill">Auto-Installed</span></td></tr>
+    </tbody>
+  </table>
+
+  <!-- Steps -->
+  <div class="install-steps">
+
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Clone the Repository</h3>
+        <p>Download Evil-Eye from GitHub to your local machine.</p>
+        <div class="code-block" data-label="bash">
+<code><span class="cmd">git</span> clone https://github.com/RGSecurityTeam/evil-eye.git
+<span class="cmd">cd</span> evil-eye</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>Install Dependencies</h3>
+        <p>Install required packages. Evil-Eye will auto-install most on first run, but pre-installing is recommended.</p>
+        <div class="code-block" data-label="kali / parrot / ubuntu">
+<code><span class="cmd">sudo</span> apt update
+<span class="cmd">sudo</span> apt install <span class="flag">-y</span> php php-cgi curl wget jq
+<span class="comment"># lolcat and cloudflared are auto-installed on first run</span></code>
+        </div>
+        <div class="code-block" data-label="macos">
+<code><span class="cmd">brew</span> install php curl wget jq
+<span class="cmd">gem</span> install lolcat</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Make Executable &amp; Run</h3>
+        <p>Give execution permission and launch Evil-Eye.</p>
+        <div class="code-block" data-label="bash">
+<code><span class="cmd">chmod</span> <span class="flag">+x</span> <span class="path">evel.sh</span>
+<span class="cmd">bash</span> <span class="path">evel.sh</span></code>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Port Conflict Fix (Parrot OS)</h3>
+        <p>If you have GoPhish or another tool using port 3333, change Evil-Eye's port to avoid conflict.</p>
+        <div class="code-block" data-label="bash">
+<code><span class="comment"># Check what's using port 3333</span>
+<span class="cmd">sudo</span> ss -tlnp | grep 3333
+
+<span class="comment"># Kill conflicting process or change Evil-Eye's port</span>
+<span class="cmd">sed</span> <span class="flag">-i</span> 's/127.0.0.1:3333/127.0.0.1:4444/g' lib/tunnel.sh</code>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Usage -->
+<section id="usage">
+  <p class="section-label">04 &nbsp; Usage Guide</p>
+  <h2 class="section-title">How to Use</h2>
+
+  <div class="usage-grid">
+    <div class="usage-card">
+      <h3>Step-by-Step Workflow</h3>
+      <ul class="usage-list">
+        <li><span>Run <code style="display:inline;font-size:12px;color:var(--green);">bash evel.sh</code> — tool checks internet, verifies all dependencies.</span></li>
+        <li><span>Select a template from the main menu (1–5).</span></li>
+        <li><span>Fill in any required input (e.g. victim name, YouTube URL, message file).</span></li>
+        <li><span>Select tunnel option — Cloudflared (public link) or Localhost.</span></li>
+        <li><span>Copy the generated Cloudflare link and send it to the target.</span></li>
+        <li><span>Terminal will show when the link is opened and images are received.</span></li>
+        <li><span>Captured images saved to <code style="display:inline;font-size:12px;color:var(--green);">captured_imgs/</code> folder.</span></li>
+        <li><span>Press <code style="display:inline;font-size:12px;color:var(--red);">Ctrl+C</code> to terminate. Images auto-move to output folder.</span></li>
+      </ul>
+    </div>
+
+    <div class="usage-card">
+      <h3>Captured Data</h3>
+      <ul class="usage-list">
+        <li><span><code style="display:inline;font-size:12px;color:var(--green);">captured_imgs/</code> — JPEG images from target's camera, named with timestamp.</span></li>
+        <li><span><code style="display:inline;font-size:12px;color:var(--green);">captured_ip.txt</code> — Target IP address and user-agent logged here.</span></li>
+        <li><span>Camera permission prompt appears on the target's browser — once accepted, capture begins silently every 1.5 seconds.</span></li>
+        <li><span>Images captured at full native camera resolution (up to 4K).</span></li>
+        <li><span>All data is stored locally — nothing sent to any third-party server.</span></li>
+      </ul>
+    </div>
+
+    <div class="usage-card">
+      <h3>Tunnel Options</h3>
+      <ul class="usage-list">
+        <li><span><strong style="color:#fff;">Cloudflared</strong> — Generates a public <code style="display:inline;font-size:12px;color:var(--cyan);">trycloudflare.com</code> link. Works from any network. Recommended.</span></li>
+        <li><span><strong style="color:#fff;">Localhost</strong> — Runs on <code style="display:inline;font-size:12px;color:var(--cyan);">127.0.0.1:3333</code> only. Useful for local testing on the same device or LAN.</span></li>
+      </ul>
+    </div>
+
+    <div class="usage-card">
+      <h3>Tips &amp; Notes</h3>
+      <ul class="usage-list">
+        <li><span>Camera access requires HTTPS — Cloudflared provides this automatically.</span></li>
+        <li><span>On Parrot OS, ensure <code style="display:inline;font-size:12px;color:var(--green);">php-cgi</code> is installed as a fallback server.</span></li>
+        <li><span>GoPhish uses port 3333 by default — stop it before running or change Evil-Eye's port.</span></li>
+        <li><span>The link only works while the terminal session is active. Closing the terminal stops the server.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Disclaimer -->
+<div id="disclaimer">
+  <div class="disclaimer-inner">
+    <p class="section-label">05 &nbsp; Legal</p>
+    <div class="disclaimer-box">
+      <h2>⚠ Disclaimer</h2>
+
+      <p>Evil-Eye is developed <strong>strictly for educational purposes and authorized penetration testing only.</strong> This tool demonstrates how camera phishing attacks work so that security professionals and researchers can understand, detect, and defend against them.</p>
+
+      <div class="disclaimer-points">
+        <div class="disclaimer-point">Using this tool against any individual or system <strong>without explicit written permission</strong> is illegal and unethical.</div>
+        <div class="disclaimer-point">The developers and contributors of Evil-Eye are <strong>not responsible for any misuse, damage, or legal consequences</strong> arising from the use of this tool.</div>
+        <div class="disclaimer-point">Unauthorized interception of camera feeds may violate <strong>computer crime laws, privacy laws, and surveillance regulations</strong> in your jurisdiction.</div>
+        <div class="disclaimer-point">This tool must <strong>only be used in controlled lab environments</strong> or with targets who have provided informed consent in writing.</div>
+        <div class="disclaimer-point">By using Evil-Eye, you agree that you are solely responsible for your actions and confirm that you have the <strong>legal authority to perform any tests.</strong></div>
+      </div>
+
+      <p>This software is provided "as-is" with no warranty. RGSecurityTeam is not liable for any damages or legal issues resulting from misuse.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-brand"><span>Evil-Eye</span> &nbsp;·&nbsp; RGSecurityTeam &nbsp;·&nbsp; v0.1</div>
+  <div class="footer-links">
+    <a href="#hero">Top</a>
+    <a href="#install">Install</a>
+    <a href="#disclaimer">Legal</a>
+  </div>
+</footer>
+
+<script>
+  // Smooth active nav highlighting
+  const sections = document.querySelectorAll('section, div[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => {
+          a.style.color = a.getAttribute('href') === '#' + entry.target.id
+            ? 'var(--green)' : '';
+        });
+      }
+    });
+  }, { threshold: 0.4 });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Typing cursor on hero eyebrow
+  const eyebrow = document.querySelector('.hero-eyebrow');
+  const originalText = eyebrow.textContent;
+  eyebrow.textContent = '';
+  let i = 0;
+  const typeInterval = setInterval(() => {
+    eyebrow.textContent += originalText[i++];
+    if (i >= originalText.length) clearInterval(typeInterval);
+  }, 35);
+</script>
+
+</body>
+</html>
