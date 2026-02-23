@@ -920,21 +920,6 @@
       </div>
     </div>
 
-    <div class="step">
-      <div class="step-num">04</div>
-      <div class="step-content">
-        <h3>Port Conflict Fix (Parrot OS)</h3>
-        <p>If you have GoPhish or another tool using port 3333, change Evil-Eye's port to avoid conflict.</p>
-        <div class="code-block" data-label="bash">
-<code><span class="comment"># Check what's using port 3333</span>
-<span class="cmd">sudo</span> ss -tlnp | grep 3333
-
-<span class="comment"># Kill conflicting process or change Evil-Eye's port</span>
-<span class="cmd">sed</span> <span class="flag">-i</span> 's/127.0.0.1:3333/127.0.0.1:4444/g' lib/tunnel.sh</code>
-        </div>
-      </div>
-    </div>
-
   </div>
 </section>
 
@@ -975,7 +960,7 @@
       <h3>Tunnel Options</h3>
       <ul class="usage-list">
         <li><span><strong style="color:#fff;">Cloudflared</strong> — Generates a public <code style="display:inline;font-size:12px;color:var(--cyan);">trycloudflare.com</code> link. Works from any network. Recommended.</span></li>
-        <li><span><strong style="color:#fff;">Localhost</strong> — Runs on <code style="display:inline;font-size:12px;color:var(--cyan);">127.0.0.1:3333</code> only. Useful for local testing on the same device or LAN.</span></li>
+        <li><span><strong style="color:#fff;">Localhost</strong> — Runs on <code style="display:inline;font-size:12px;color:var(--cyan);">127.0.0.1:9090</code> only. Useful for local testing on the same device or LAN.</span></li>
       </ul>
     </div>
 
@@ -1065,4 +1050,5 @@
 </body>
 
 </html>
+
 
